@@ -16,16 +16,17 @@ class Chef
         :description => 'Do not generate .gitignore',
         :default => true
 
-      option :librarian,
-        :long => '--librarian',
-        :description => 'Initialize Librarian'
+      option :skip_berkshelf,
+        :long => '--skip-berkshelf',
+        :boolean => false,
+        :description => "Skip generating files for Berkshelf support"
 
       def run
         @base = @name_args.first
         validate!
         create_kitchen
         create_cupboards %w[nodes roles data_bags site-cookbooks cookbooks]
-        librarian_init if config[:librarian]
+        bootstrap_berkshelf unless config[:skip_berkshelf]
       end
 
       def validate!
@@ -61,6 +62,12 @@ class Chef
           end
         end
         gitignore %w[/cookbooks/ /tmp/librarian/]
+      end
+
+      def bootstrap_berkshelf
+        File.open(File.join(@base, 'Berksfile'), 'w') do |f|
+          f.write("site :opscode\n")
+        end
       end
 
       def gitignore(*entries)
